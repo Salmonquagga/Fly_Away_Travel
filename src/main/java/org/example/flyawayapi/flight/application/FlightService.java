@@ -3,10 +3,12 @@ package org.example.flyawayapi.flight.application;
 import org.example.flyawayapi.flight.domain.Flight;
 import org.example.flyawayapi.flight.dto.FlightResponseDTO;
 import org.example.flyawayapi.flight.dto.FlightSearchResponseDTO;
+import org.example.flyawayapi.flight.dto.NewFlightManyRequestDTO;
 import org.example.flyawayapi.flight.dto.NewFlightRequestDTO;
 import org.example.flyawayapi.flight.infrastructure.FlightRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -62,32 +64,51 @@ public class FlightService {
         return flightRepository.save(flight);
     }
 
-    public FlightSearchResponseDTO search(String flightNumber, String airlineName) {
-
-        List<Flight> flights;
-
-        if (flightNumber != null && !flightNumber.isBlank()) {
-            flights = flightRepository.findAll()
-                    .stream()
-                    .filter(f -> f.getFlightNumber()
-                            .toLowerCase()
-                            .contains(flightNumber.toLowerCase()))
-                    .toList();
-
-        } else if (airlineName != null && !airlineName.isBlank()) {
-            flights = flightRepository.findAll()
-                    .stream()
-                    .filter(f -> f.getAirlineName()
-                            .toLowerCase()
-                            .contains(airlineName.toLowerCase()))
-                    .toList();
-
-        } else {
-            flights = flightRepository.findAll();
+    public void createMany(NewFlightManyRequestDTO dto) {
+        if (dto.getInputs() == null || dto.getInputs().isEmpty()) {
+            throw new RuntimeException("Inputs are mandatory");
         }
 
-        List<FlightResponseDTO> items = flights
-                .stream()
+        for (NewFlightRequestDTO input : dto.getInputs()) {
+            create(input);
+        }
+    }
+
+    public FlightSearchResponseDTO search(
+            String flightNumber,
+            String airlineName,
+            String estDepartureTimeFrom,
+            String estDepartureTimeTo
+    ) {
+        List<Flight> flights = flightRepository.findAll();
+
+        if (flightNumber != null && !flightNumber.isBlank()) {
+            flights = flights.stream()
+                    .filter(f -> f.getFlightNumber().toLowerCase().contains(flightNumber.toLowerCase()))
+                    .toList();
+        }
+
+        if (airlineName != null && !airlineName.isBlank()) {
+            flights = flights.stream()
+                    .filter(f -> f.getAirlineName().toLowerCase().contains(airlineName.toLowerCase()))
+                    .toList();
+        }
+
+        if (estDepartureTimeFrom != null && !estDepartureTimeFrom.isBlank()) {
+            Instant from = Instant.parse(estDepartureTimeFrom);
+            flights = flights.stream()
+                    .filter(f -> !f.getEstDepartureTime().isBefore(from))
+                    .toList();
+        }
+
+        if (estDepartureTimeTo != null && !estDepartureTimeTo.isBlank()) {
+            Instant to = Instant.parse(estDepartureTimeTo);
+            flights = flights.stream()
+                    .filter(f -> !f.getEstDepartureTime().isAfter(to))
+                    .toList();
+        }
+
+        List<FlightResponseDTO> items = flights.stream()
                 .map(FlightResponseDTO::new)
                 .toList();
 

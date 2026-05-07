@@ -1,0 +1,6 @@
+customerFirstName: John
+customerLastName: Doe
+flightNumber: AA448
+estDepartureTime: 2026-05-10T12:00:00Z
+estArrivalTime: 2026-05-10T19:00:00Z
+bookingDate: 2026-05-07T19:42:07.044842400Z
